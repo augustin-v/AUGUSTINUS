@@ -6,3 +6,8 @@ edition = "2024"
 [lib]
 path = "src/lib.rs"
 
+[dependencies]
+augustinus-app = { path = "../augustinus-app" }
+crossterm = "0.29"
+ratatui = "0.29"
+unicode-width = "0.2"
