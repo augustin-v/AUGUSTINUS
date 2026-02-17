@@ -3,6 +3,7 @@ mod layout;
 mod panes;
 mod splash;
 mod theme;
+pub mod widgets;
 
 use augustinus_app::AppState;
 use ratatui::Frame;
