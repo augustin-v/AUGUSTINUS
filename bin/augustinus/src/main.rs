@@ -4,7 +4,7 @@ use std::{
 };
 
 use anyhow::Context;
-use augustinus_app::{Action, AppState, GeneralInputMode, LocDelta, PaneId};
+use augustinus_app::{Action, AgentsInputMode, AppState, GeneralInputMode, LocDelta, PaneId};
 use augustinus_pty::PtySession;
 use augustinus_store::config::{AppConfig, Language};
 use augustinus_store::db::Store;
@@ -193,7 +193,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, config: &AppConfig
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 state.on_activity();
-                if handle_key(key, &mut state, &mut pty) {
+                if handle_key(key, &mut state, &mut pty, &mut agents_pty) {
                     break;
                 }
                 if let Some(cmd) = state.last_command.take() {
@@ -304,6 +304,7 @@ fn handle_key(
     key: KeyEvent,
     state: &mut AppState,
     pty: &mut PtySession,
+    agents_pty: &mut PtySession,
 ) -> bool {
     if state.command.is_some() {
         match key.code {
@@ -329,6 +330,17 @@ fn handle_key(
         return false;
     }
 
+    if state.focused == PaneId::Agents
+        && state.agents_input_mode == AgentsInputMode::CodexLocked
+    {
+        if key.code == KeyCode::Esc {
+            state.apply(Action::ExitAgentsTerminalMode);
+            return false;
+        }
+        let _ = agents_pty.send_key(key);
+        return false;
+    }
+
     if key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
         return true;
     }
@@ -340,6 +352,12 @@ fn handle_key(
         KeyCode::Char('l') => state.apply(Action::FocusRight),
         KeyCode::Tab => state.apply(Action::RotateFocus),
         KeyCode::Enter => {
+            if state.focused == PaneId::Agents
+                && state.agents_input_mode == AgentsInputMode::PaneControls
+            {
+                state.apply(Action::EnterAgentsTerminalMode);
+                return false;
+            }
             if state.focused == PaneId::General
                 && state.general_input_mode == GeneralInputMode::AppControls
             {
