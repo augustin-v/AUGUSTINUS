@@ -23,22 +23,16 @@ fn main() -> io::Result<()> {
 
     let result = (|| {
         run_splash(&mut terminal, Duration::from_millis(2500))?;
-        let mut config = AppConfig::load_or_none().map_err(anyhow_to_io)?;
-        if config.is_none() {
-            let language = run_first_boot(&mut terminal)?;
-            let created = AppConfig {
-                language,
-                shell: "/bin/bash".to_string(),
-                git_repo: None,
-            };
-            let _ = created.save().map_err(anyhow_to_io)?;
-            config = Some(created);
-        }
-        let config = config.unwrap_or(AppConfig {
+        let mut config = AppConfig::load_or_none()
+            .map_err(anyhow_to_io)?
+            .unwrap_or(AppConfig {
             language: Language::En,
             shell: "/bin/bash".to_string(),
             git_repo: None,
         });
+        let chosen_language = run_language_picker(&mut terminal, config.language)?;
+        config.language = chosen_language;
+        let _ = config.save().map_err(anyhow_to_io)?;
         run_app(&mut terminal, &config)
     })();
 
@@ -79,8 +73,11 @@ fn run_splash(
     Ok(())
 }
 
-fn run_first_boot(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<Language> {
-    let mut selected_index: usize = 0;
+fn run_language_picker(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    default: Language,
+) -> io::Result<Language> {
+    let mut selected_index: usize = language_to_index(default);
     let tick_rate = Duration::from_millis(33);
 
     loop {
@@ -91,7 +88,7 @@ fn run_first_boot(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Resu
         if event::poll(tick_rate)? {
             if let Event::Key(key) = event::read()? {
                 if should_quit(key) {
-                    return Ok(Language::En);
+                    return Ok(default);
                 }
                 match key.code {
                     KeyCode::Char('k') | KeyCode::Up => {
@@ -105,6 +102,14 @@ fn run_first_boot(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Resu
                 }
             }
         }
+    }
+}
+
+fn language_to_index(language: Language) -> usize {
+    match language {
+        Language::En => 0,
+        Language::Fr => 1,
+        Language::Ja => 2,
     }
 }
 

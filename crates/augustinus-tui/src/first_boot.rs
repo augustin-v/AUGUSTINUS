@@ -46,7 +46,7 @@ pub fn render(frame: &mut Frame<'_>, selected_index: usize) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("First Boot")
+                .title("Language")
                 .style(theme.base().fg(theme.accent)),
         )
         .alignment(Alignment::Left)
