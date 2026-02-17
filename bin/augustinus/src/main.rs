@@ -3,7 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use augustinus_app::{Action, AppState, PaneId};
+use augustinus_app::{Action, AppState, LocDelta, PaneId};
 use augustinus_pty::PtySession;
 use augustinus_store::config::{AppConfig, Language};
 use augustinus_store::db::Store;
@@ -116,6 +116,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, config: &AppConfig
     let mut state = AppState::new_for_test();
     let store = init_store_and_load_stats(&mut state)?;
     let mut leader_armed = false;
+    let mut git_poll_elapsed = Duration::from_secs(30);
 
     let size = terminal.size()?;
     let (cols, rows) = general_pty_size(&state, size.width, size.height);
@@ -157,11 +158,35 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, config: &AppConfig
         if last_tick.elapsed() >= tick_rate {
             let dt = last_tick.elapsed();
             state.tick(dt);
+            git_poll_elapsed = git_poll_elapsed.saturating_add(dt);
+            if git_poll_elapsed >= Duration::from_secs(30) {
+                git_poll_elapsed = Duration::ZERO;
+                if let Some(repo) = config.git_repo.as_deref() {
+                    state.loc_delta = compute_loc_delta(repo);
+                } else {
+                    state.loc_delta = None;
+                }
+            }
             last_tick = Instant::now();
         }
     }
 
     Ok(())
+}
+
+fn compute_loc_delta(repo_path: &str) -> Option<LocDelta> {
+    let output = std::process::Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .arg("diff")
+        .arg("--numstat")
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    Some(LocDelta::parse_git_numstat(&stdout))
 }
 
 fn general_pty_size(state: &AppState, term_cols: u16, term_rows: u16) -> (u16, u16) {

@@ -1,6 +1,7 @@
 use crate::{Action, PaneId};
 use crate::FocusState;
 use crate::{motivation::DEFAULT_IDLE_THRESHOLD, MotivationState};
+use crate::LocDelta;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppState {
@@ -11,6 +12,7 @@ pub struct AppState {
     pub motivation: MotivationState,
     pub focus: FocusState,
     pub general_screen: String,
+    pub loc_delta: Option<LocDelta>,
 }
 
 impl AppState {
@@ -23,6 +25,7 @@ impl AppState {
             motivation: MotivationState::new(DEFAULT_IDLE_THRESHOLD),
             focus: FocusState::new_for_test(),
             general_screen: String::new(),
+            loc_delta: None,
         }
     }
 
