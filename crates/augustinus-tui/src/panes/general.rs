@@ -13,7 +13,7 @@ pub fn render(
     area: ratatui::layout::Rect,
     block: Block<'static>,
     theme: &Theme,
-    state: &AppState,
+    state: &mut AppState,
 ) {
     let mut lines = Vec::new();
     if state.general_input_mode == GeneralInputMode::TerminalLocked {

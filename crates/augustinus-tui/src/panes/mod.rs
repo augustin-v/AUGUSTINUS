@@ -20,7 +20,7 @@ pub fn title(id: PaneId) -> &'static str {
 
 pub fn render(
     frame: &mut Frame<'_>,
-    state: &AppState,
+    state: &mut AppState,
     id: PaneId,
     area: ratatui::layout::Rect,
     block: Block<'static>,
@@ -29,7 +29,7 @@ pub fn render(
     match id {
         PaneId::Motivation => motivation::render(frame, state, area, block, theme),
         PaneId::General => general::render(frame, area, block, theme, state),
-        PaneId::Agents => agents::render(frame, area, block, theme),
+        PaneId::Agents => agents::render(frame, area, block, theme, state),
         PaneId::Stats => stats::render(frame, area, block, theme, state),
     }
 }

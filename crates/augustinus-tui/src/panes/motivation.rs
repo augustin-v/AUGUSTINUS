@@ -12,13 +12,18 @@ use augustinus_app::{AppState, Tone, DAILY_FOCUS_GOAL_SECS};
 
 pub fn render(
     frame: &mut Frame<'_>,
-    state: &AppState,
+    state: &mut AppState,
     area: ratatui::layout::Rect,
     block: Block<'static>,
     theme: &Theme,
 ) {
     let inner = block.inner(area);
     frame.render_widget(block, area);
+
+    // Keep animation state in the app; renderer informs it of the current pane size.
+    // This avoids tying particle coordinates to terminal size outside of MotivationState.
+    state.motivation.set_particle_bounds(inner.width, inner.height);
+    render_particles(frame, state, inner, theme);
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -36,6 +41,20 @@ pub fn render(
     render_quote(frame, state, chunks[2], theme);
     render_stats(frame, state, chunks[3], theme);
     render_ticker(frame, state, chunks[4], theme);
+}
+
+fn render_particles(frame: &mut Frame<'_>, state: &AppState, inner: ratatui::layout::Rect, theme: &Theme) {
+    let buf = frame.buffer_mut();
+    for (x, y, ch) in state.motivation.particles.points() {
+        let gx = inner.x.saturating_add(*x).min(inner.right().saturating_sub(1));
+        let gy = inner.y.saturating_add(*y).min(inner.bottom().saturating_sub(1));
+        if gx < inner.right() && gy < inner.bottom() {
+            if let Some(cell) = buf.cell_mut((gx, gy)) {
+                cell.set_char(*ch);
+                cell.set_style(theme.base().fg(theme.accent).add_modifier(Modifier::DIM));
+            }
+        }
+    }
 }
 
 fn render_header(frame: &mut Frame<'_>, state: &AppState, area: ratatui::layout::Rect, theme: &Theme) {

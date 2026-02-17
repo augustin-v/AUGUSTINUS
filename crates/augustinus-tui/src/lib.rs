@@ -8,7 +8,7 @@ pub mod widgets;
 use augustinus_app::AppState;
 use ratatui::Frame;
 
-pub fn render(frame: &mut Frame<'_>, state: &AppState) {
+pub fn render(frame: &mut Frame<'_>, state: &mut AppState) {
     layout::render_root(frame, state);
 }
 

@@ -136,7 +136,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, config: &AppConfig
 
     loop {
         terminal.draw(|frame| {
-            augustinus_tui::render(frame, &state);
+            augustinus_tui::render(frame, &mut state);
         })?;
 
         pty.poll();

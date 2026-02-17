@@ -8,7 +8,7 @@ use ratatui::{
 
 use crate::{panes, theme::Theme};
 
-pub fn render_root(frame: &mut Frame<'_>, state: &AppState) {
+pub fn render_root(frame: &mut Frame<'_>, state: &mut AppState) {
     let theme = Theme::arctic();
     frame.render_widget(Block::default().style(theme.base()), frame.area());
 
@@ -38,7 +38,7 @@ fn split_h(area: Rect) -> [Rect; 2] {
         .areas(area)
 }
 
-fn render_pane(frame: &mut Frame<'_>, state: &AppState, id: PaneId, area: Rect, theme: &Theme) {
+fn render_pane(frame: &mut Frame<'_>, state: &mut AppState, id: PaneId, area: Rect, theme: &Theme) {
     let focused = state.focused == id;
     let title = panes::title(id);
     let border_color = if focused {

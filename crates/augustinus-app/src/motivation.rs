@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use crate::motivation_anim::{BannerPulse, QuoteTypewriter, Ticker};
+use crate::particles::{ParticleField, Seed};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Tone {
@@ -16,6 +17,7 @@ pub const QUOTE_TYPEWRITER_SPEED_CPS: u32 = 50;
 pub const TICKER_SPEED_CPS: u32 = 18;
 pub const DAILY_FOCUS_GOAL_SECS: u64 = 2 * 60 * 60;
 pub const DEFAULT_TICKER_TEXT: &str = "LOCK IN • NO MERCY • COMPOUND TODAY • STAY DANGEROUS • ONE MORE REP •";
+pub const PARTICLE_COUNT: usize = 48;
 
 static BRUTAL_QUOTES: &[&str] = &[
     "Your biological clock advances whether you code or not.",
@@ -63,6 +65,7 @@ pub struct MotivationState {
     pub pulse: BannerPulse,
     pub typewriter: QuoteTypewriter,
     pub ticker: Ticker,
+    pub particles: ParticleField,
 }
 
 impl MotivationState {
@@ -88,6 +91,7 @@ impl MotivationState {
             pulse: BannerPulse::new(BANNER_PULSE_PERIOD),
             typewriter,
             ticker,
+            particles: ParticleField::new(Seed(1), 1, 1, PARTICLE_COUNT),
         }
     }
 
@@ -124,6 +128,11 @@ impl MotivationState {
         self.pulse.tick(dt);
         self.typewriter.tick(dt);
         self.ticker.tick(dt);
+        self.particles.tick(dt);
+    }
+
+    pub fn set_particle_bounds(&mut self, width: u16, height: u16) {
+        self.particles.resize(width, height);
     }
 
     fn set_tone(&mut self, tone: Tone) {

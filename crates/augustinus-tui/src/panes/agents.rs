@@ -6,8 +6,15 @@ use ratatui::{
 };
 
 use crate::theme::Theme;
+use augustinus_app::AppState;
 
-pub fn render(frame: &mut Frame<'_>, area: ratatui::layout::Rect, block: Block<'static>, theme: &Theme) {
+pub fn render(
+    frame: &mut Frame<'_>,
+    area: ratatui::layout::Rect,
+    block: Block<'static>,
+    theme: &Theme,
+    _state: &mut AppState,
+) {
     let text = Text::from(vec![
         Line::from("AI AGENTS pane (MVP stub)"),
         Line::from(""),
@@ -19,4 +26,3 @@ pub fn render(frame: &mut Frame<'_>, area: ratatui::layout::Rect, block: Block<'
         .alignment(Alignment::Left);
     frame.render_widget(widget, area);
 }
-

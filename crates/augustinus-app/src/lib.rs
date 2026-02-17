@@ -2,6 +2,7 @@ mod action;
 mod focus;
 mod motivation;
 pub mod motivation_anim;
+pub mod particles;
 mod stats;
 mod panes;
 mod state;

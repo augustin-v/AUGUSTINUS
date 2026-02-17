@@ -13,7 +13,7 @@ pub fn render(
     area: ratatui::layout::Rect,
     block: Block<'static>,
     theme: &Theme,
-    state: &AppState,
+    state: &mut AppState,
 ) {
     let focus_seconds = state.focus.focus_seconds_today();
     let streak_days = state.focus.streak_days();
