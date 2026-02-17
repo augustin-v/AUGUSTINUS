@@ -10,6 +10,7 @@ pub struct AppState {
     pub last_command: Option<String>,
     pub motivation: MotivationState,
     pub focus: FocusState,
+    pub general_screen: String,
 }
 
 impl AppState {
@@ -21,6 +22,7 @@ impl AppState {
             last_command: None,
             motivation: MotivationState::new(DEFAULT_IDLE_THRESHOLD),
             focus: FocusState::new_for_test(),
+            general_screen: String::new(),
         }
     }
 

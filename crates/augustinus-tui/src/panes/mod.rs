@@ -28,7 +28,7 @@ pub fn render(
 ) {
     match id {
         PaneId::Motivation => motivation::render(frame, state, area, block, theme),
-        PaneId::General => general::render(frame, area, block, theme),
+        PaneId::General => general::render(frame, area, block, theme, state),
         PaneId::Agents => agents::render(frame, area, block, theme),
         PaneId::Stats => stats::render(frame, area, block, theme, state),
     }

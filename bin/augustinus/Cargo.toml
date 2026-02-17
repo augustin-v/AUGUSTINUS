@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1"
 augustinus-app = { path = "../../crates/augustinus-app" }
+augustinus-pty = { path = "../../crates/augustinus-pty" }
 augustinus-tui = { path = "../../crates/augustinus-tui" }
 augustinus-store = { path = "../../crates/augustinus-store" }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }

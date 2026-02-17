@@ -3,7 +3,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use augustinus_app::{Action, AppState};
+use augustinus_app::{Action, AppState, PaneId};
+use augustinus_pty::PtySession;
 use augustinus_store::config::{AppConfig, Language};
 use augustinus_store::db::Store;
 use crossterm::{
@@ -22,17 +23,23 @@ fn main() -> io::Result<()> {
 
     let result = (|| {
         run_splash(&mut terminal, Duration::from_millis(2500))?;
-        let config = AppConfig::load_or_none().map_err(anyhow_to_io)?;
+        let mut config = AppConfig::load_or_none().map_err(anyhow_to_io)?;
         if config.is_none() {
             let language = run_first_boot(&mut terminal)?;
-            let config = AppConfig {
+            let created = AppConfig {
                 language,
                 shell: "/bin/bash".to_string(),
                 git_repo: None,
             };
-            let _ = config.save().map_err(anyhow_to_io)?;
+            let _ = created.save().map_err(anyhow_to_io)?;
+            config = Some(created);
         }
-        run_app(&mut terminal)
+        let config = config.unwrap_or(AppConfig {
+            language: Language::En,
+            shell: "/bin/bash".to_string(),
+            git_repo: None,
+        });
+        run_app(&mut terminal, &config)
     })();
 
     disable_raw_mode()?;
@@ -105,9 +112,16 @@ fn index_to_language(index: usize) -> Language {
     }
 }
 
-fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> {
+fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, config: &AppConfig) -> io::Result<()> {
     let mut state = AppState::new_for_test();
     let store = init_store_and_load_stats(&mut state)?;
+    let mut leader_armed = false;
+
+    let size = terminal.size()?;
+    let (cols, rows) = general_pty_size(&state, size.width, size.height);
+    let mut pty = PtySession::spawn(&config.shell, cols, rows).map_err(anyhow_to_io)?;
+    let mut last_cols = cols;
+    let mut last_rows = rows;
     let tick_rate = Duration::from_millis(33);
     let mut last_tick = Instant::now();
 
@@ -116,14 +130,24 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> 
             augustinus_tui::render(frame, &state);
         })?;
 
+        pty.poll();
+        state.general_screen = pty.snapshot().contents;
+
+        let size = terminal.size()?;
+        let (cols, rows) = general_pty_size(&state, size.width, size.height);
+        if cols != last_cols || rows != last_rows {
+            let _ = pty.resize(cols, rows);
+            last_cols = cols;
+            last_rows = rows;
+        }
+
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
-                if should_quit(key) {
+                state.on_activity();
+                if handle_key(key, &mut state, &mut leader_armed, &mut pty) {
                     break;
                 }
-                state.on_activity();
-                handle_key(key, &mut state);
                 if let Some(cmd) = state.last_command.take() {
                     handle_command(&cmd, &mut state, &store)?;
                 }
@@ -138,6 +162,14 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> 
     }
 
     Ok(())
+}
+
+fn general_pty_size(state: &AppState, term_cols: u16, term_rows: u16) -> (u16, u16) {
+    let (cols, rows) = match state.fullscreen {
+        Some(PaneId::General) => (term_cols, term_rows),
+        _ => (term_cols / 2, term_rows / 2),
+    };
+    (cols.saturating_sub(2).max(1), rows.saturating_sub(2).max(1))
 }
 
 fn init_store_and_load_stats(state: &mut AppState) -> io::Result<Store> {
@@ -189,7 +221,22 @@ fn should_quit(key: KeyEvent) -> bool {
     key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL)
 }
 
-fn handle_key(key: KeyEvent, state: &mut AppState) {
+fn handle_key(
+    key: KeyEvent,
+    state: &mut AppState,
+    leader_armed: &mut bool,
+    pty: &mut PtySession,
+) -> bool {
+    if key.code == KeyCode::Char(' ') && key.modifiers.contains(KeyModifiers::CONTROL) {
+        *leader_armed = true;
+        return false;
+    }
+
+    if state.focused == PaneId::General && !*leader_armed && state.command.is_none() {
+        let _ = pty.send_key(key);
+        return false;
+    }
+
     if state.command.is_some() {
         match key.code {
             KeyCode::Esc => state.apply(Action::ExitCommandMode),
@@ -200,7 +247,15 @@ fn handle_key(key: KeyEvent, state: &mut AppState) {
             }
             _ => {}
         }
-        return;
+        return false;
+    }
+
+    if *leader_armed {
+        *leader_armed = false;
+    }
+
+    if key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
+        return true;
     }
 
     match key.code {
@@ -214,6 +269,8 @@ fn handle_key(key: KeyEvent, state: &mut AppState) {
         KeyCode::Char(':') => state.apply(Action::EnterCommandMode),
         _ => {}
     }
+
+    false
 }
 
 fn is_printable(ch: char) -> bool {

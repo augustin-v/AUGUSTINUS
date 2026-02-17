@@ -6,3 +6,8 @@ edition = "2024"
 [lib]
 path = "src/lib.rs"
 
+[dependencies]
+anyhow = "1"
+crossterm = "0.29"
+portable-pty = "0.9"
+vt100 = "0.15"
