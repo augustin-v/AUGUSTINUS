@@ -30,6 +30,6 @@ pub fn render(
         PaneId::Motivation => motivation::render(frame, state, area, block, theme),
         PaneId::General => general::render(frame, area, block, theme),
         PaneId::Agents => agents::render(frame, area, block, theme),
-        PaneId::Stats => stats::render(frame, area, block, theme),
+        PaneId::Stats => stats::render(frame, area, block, theme, state),
     }
 }

@@ -29,10 +29,16 @@ pub fn render(
 
     let header = format!("{tone_label}{idle_label}");
 
+    let streak_days = state.focus.streak_days();
+    let focus_seconds = state.focus.focus_seconds_today();
+
     let text = Text::from(vec![
         Line::from(header).style(theme.base().fg(theme.accent)),
         Line::from(""),
         Line::from(state.motivation.quote()).style(theme.base().fg(theme.fg)),
+        Line::from(""),
+        Line::from(format!("Streak: {streak_days} day(s)")).style(theme.base().fg(theme.accent)),
+        Line::from(format!("Focus today: {focus_seconds}s")).style(theme.base().fg(theme.accent)),
     ]);
     let widget = Paragraph::new(text)
         .block(block)

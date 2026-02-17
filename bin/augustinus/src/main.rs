@@ -5,6 +5,7 @@ use std::{
 
 use augustinus_app::{Action, AppState};
 use augustinus_store::config::{AppConfig, Language};
+use augustinus_store::db::Store;
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     execute,
@@ -106,6 +107,7 @@ fn index_to_language(index: usize) -> Language {
 
 fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> {
     let mut state = AppState::new_for_test();
+    let store = init_store_and_load_stats(&mut state)?;
     let tick_rate = Duration::from_millis(33);
     let mut last_tick = Instant::now();
 
@@ -122,6 +124,9 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> 
                 }
                 state.on_activity();
                 handle_key(key, &mut state);
+                if let Some(cmd) = state.last_command.take() {
+                    handle_command(&cmd, &mut state, &store)?;
+                }
             }
         }
 
@@ -129,6 +134,51 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> 
             let dt = last_tick.elapsed();
             state.tick(dt);
             last_tick = Instant::now();
+        }
+    }
+
+    Ok(())
+}
+
+fn init_store_and_load_stats(state: &mut AppState) -> io::Result<Store> {
+    let db_path = Store::default_db_path().map_err(anyhow_to_io)?;
+    let store = Store::open(db_path).map_err(anyhow_to_io)?;
+
+    let today = chrono::Local::now().date_naive();
+    let focus_seconds_today = store
+        .focus_seconds_for_day(today)
+        .map_err(anyhow_to_io)?
+        .max(0) as u64;
+    let streak = store.streak_days_ending_today().map_err(anyhow_to_io)?;
+    state.focus.set_focus_seconds_today(focus_seconds_today);
+    state.focus.set_streak_days(streak);
+
+    Ok(store)
+}
+
+fn handle_command(cmd: &str, state: &mut AppState, store: &Store) -> io::Result<()> {
+    let cmd = cmd.trim();
+
+    if let Some(rest) = cmd.strip_prefix("focus ") {
+        let arg = rest.trim();
+        match arg {
+            "start" => {
+                store.insert_event("focus_start", "{}").map_err(anyhow_to_io)?;
+                state.focus.start(Instant::now());
+            }
+            "stop" => {
+                if let Some(elapsed) = state.focus.stop(Instant::now()) {
+                    let secs = elapsed.as_secs().min(i64::MAX as u64) as i64;
+                    store
+                        .insert_event("focus_stop", &format!(r#"{{"seconds":{secs}}}"#))
+                        .map_err(anyhow_to_io)?;
+                    store.add_focus_seconds_today(secs).map_err(anyhow_to_io)?;
+                    state.focus.add_focus_seconds_today(secs.max(0) as u64);
+                    let streak = store.streak_days_ending_today().map_err(anyhow_to_io)?;
+                    state.focus.set_streak_days(streak);
+                }
+            }
+            _ => {}
         }
     }
 

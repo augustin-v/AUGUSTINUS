@@ -5,7 +5,7 @@ use std::{
 
 use anyhow::{Context, Result};
 use chrono::{Local, NaiveDate};
-use rusqlite::{params, Connection, OpenFlags};
+use rusqlite::{params, Connection, Error as SqliteError, OpenFlags};
 
 const MIGRATION_001: &str = include_str!("../migrations/001_init.sql");
 
@@ -83,15 +83,15 @@ ON CONFLICT(day) DO UPDATE SET focus_seconds = focus_seconds + excluded.focus_se
 
     pub fn focus_seconds_for_day(&self, day: NaiveDate) -> Result<i64> {
         let day = day.format("%F").to_string();
-        let seconds: i64 = self
-            .conn
-            .query_row(
-                "SELECT COALESCE(focus_seconds, 0) FROM daily WHERE day = ?1",
-                params![day],
-                |row| row.get(0),
-            )
-            .unwrap_or(0);
-        Ok(seconds)
+        match self.conn.query_row(
+            "SELECT focus_seconds FROM daily WHERE day = ?1",
+            params![day],
+            |row| row.get(0),
+        ) {
+            Ok(seconds) => Ok(seconds),
+            Err(SqliteError::QueryReturnedNoRows) => Ok(0),
+            Err(err) => Err(anyhow::Error::new(err)).context("read daily focus_seconds"),
+        }
     }
 
     pub fn streak_days_ending_today(&self) -> Result<u32> {
@@ -136,4 +136,3 @@ ON CONFLICT(day) DO UPDATE SET focus_seconds = focus_seconds + excluded.focus_se
         Ok(())
     }
 }
-
