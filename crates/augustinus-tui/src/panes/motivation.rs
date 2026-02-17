@@ -71,8 +71,10 @@ fn render_header(frame: &mut Frame<'_>, state: &AppState, area: ratatui::layout:
 
     let is_idle = state.motivation.idle.is_idle();
     let idle_style = if is_idle {
-        theme.base()
-            .fg(theme.border_focused)
+        theme
+            .base()
+            .fg(theme.bg)
+            .bg(theme.border_focused)
             .add_modifier(Modifier::BOLD)
     } else {
         theme.base().fg(theme.accent)
@@ -80,7 +82,11 @@ fn render_header(frame: &mut Frame<'_>, state: &AppState, area: ratatui::layout:
 
     let focus_active = state.focus.is_active();
     let focus_style = if focus_active {
-        theme.base().fg(theme.accent).add_modifier(Modifier::BOLD)
+        theme
+            .base()
+            .fg(theme.bg)
+            .bg(theme.accent)
+            .add_modifier(Modifier::BOLD)
     } else {
         theme.base().fg(theme.fg).add_modifier(Modifier::DIM)
     };
@@ -113,12 +119,15 @@ fn render_header(frame: &mut Frame<'_>, state: &AppState, area: ratatui::layout:
 }
 
 fn render_banner(frame: &mut Frame<'_>, state: &AppState, area: ratatui::layout::Rect, theme: &Theme) {
+    let streak_days = state.focus.streak_days();
     let banner = if state.motivation.idle.is_idle() {
-        "WAKE UP"
+        "WAKE UP".to_string()
     } else if state.focus.is_active() {
-        "LOCK IN"
+        "LOCK IN".to_string()
+    } else if streak_days > 0 {
+        format!("STREAK {streak_days}")
     } else {
-        "DEEP WORK"
+        "DEEP WORK".to_string()
     };
 
     let intensity = state.motivation.pulse.intensity_0_to_255();
@@ -139,7 +148,7 @@ fn render_banner(frame: &mut Frame<'_>, state: &AppState, area: ratatui::layout:
         style = style.add_modifier(Modifier::BOLD);
     }
 
-    let big = BigText::new(banner);
+    let big = BigText::new(&banner);
     let lines = big
         .lines()
         .into_iter()
