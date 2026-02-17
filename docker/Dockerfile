@@ -35,6 +35,6 @@ RUN apt-get update \
 ENV TERM=xterm-256color
 
 COPY --from=builder /src/target/release/augustinus /usr/local/bin/augustinus
-COPY docker/entrypoint.sh /entrypoint.sh
+COPY --chmod=755 docker/entrypoint.sh /entrypoint.sh
 
 ENTRYPOINT ["bash", "/entrypoint.sh"]

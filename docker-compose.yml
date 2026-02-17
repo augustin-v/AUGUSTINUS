@@ -1,0 +1,12 @@
+services:
+  augustinus:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    platform: linux/arm64
+    stdin_open: true
+    tty: true
+    environment:
+      - TERM=xterm-256color
+      - AUGUSTINUS_API_KEY
+

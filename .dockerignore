@@ -1,0 +1,8 @@
+.git
+.worktrees
+target
+**/target
+**/*.rs.bk
+Dockerfile
+docker-compose.yml
+
