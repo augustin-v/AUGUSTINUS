@@ -3,6 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use anyhow::Context;
 use augustinus_app::{Action, AppState, GeneralInputMode, LocDelta, PaneId};
 use augustinus_pty::PtySession;
 use augustinus_store::config::{AppConfig, Language};
@@ -29,6 +30,7 @@ fn main() -> io::Result<()> {
             language: Language::En,
             shell: "/bin/bash".to_string(),
             git_repo: None,
+            agents_cmd: None,
         });
         let chosen_language = run_language_picker(&mut terminal, config.language)?;
         config.language = chosen_language;
@@ -127,10 +129,34 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, config: &AppConfig
     let mut git_poll_elapsed = Duration::from_secs(30);
 
     let size = terminal.size()?;
-    let (cols, rows) = general_pty_size(&state, size.width, size.height);
-    let mut pty = PtySession::spawn(&config.shell, cols, rows).map_err(anyhow_to_io)?;
-    let mut last_cols = cols;
-    let mut last_rows = rows;
+    let (general_cols, general_rows) = general_pty_size(&state, size.width, size.height);
+    let (agents_cols, agents_rows) = pane_pty_size(&state, size.width, size.height, PaneId::Agents);
+
+    let mut pty = PtySession::spawn(&config.shell, general_cols, general_rows).map_err(anyhow_to_io)?;
+    let mut last_general_cols = general_cols;
+    let mut last_general_rows = general_rows;
+
+    let mut agents_pty = match config
+        .agents_cmd
+        .as_ref()
+        .and_then(|cmd| cmd.split_first())
+    {
+        Some((program, args)) => {
+            let args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+            PtySession::spawn_command(program, &args, agents_cols, agents_rows)
+        }
+        None => PtySession::spawn_command("codex", &[], agents_cols, agents_rows),
+    }
+    .or_else(|_| {
+        let mut fallback =
+            PtySession::spawn(&config.shell, agents_cols, agents_rows).context("spawn agents fallback")?;
+        let _ = fallback.send_paste("echo 'codex not found; install it, then restart'\n");
+        Ok(fallback)
+    })
+    .map_err(anyhow_to_io)?;
+
+    let mut last_agents_cols = agents_cols;
+    let mut last_agents_rows = agents_rows;
     let tick_rate = Duration::from_millis(33);
     let mut last_tick = Instant::now();
 
@@ -142,12 +168,22 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, config: &AppConfig
         pty.poll();
         state.general_screen = pty.snapshot().contents;
 
+        agents_pty.poll();
+        state.agents_screen = agents_pty.snapshot().contents;
+
         let size = terminal.size()?;
-        let (cols, rows) = general_pty_size(&state, size.width, size.height);
-        if cols != last_cols || rows != last_rows {
-            let _ = pty.resize(cols, rows);
-            last_cols = cols;
-            last_rows = rows;
+        let (general_cols, general_rows) = general_pty_size(&state, size.width, size.height);
+        if general_cols != last_general_cols || general_rows != last_general_rows {
+            let _ = pty.resize(general_cols, general_rows);
+            last_general_cols = general_cols;
+            last_general_rows = general_rows;
+        }
+
+        let (agents_cols, agents_rows) = pane_pty_size(&state, size.width, size.height, PaneId::Agents);
+        if agents_cols != last_agents_cols || agents_rows != last_agents_rows {
+            let _ = agents_pty.resize(agents_cols, agents_rows);
+            last_agents_cols = agents_cols;
+            last_agents_rows = agents_rows;
         }
 
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
@@ -198,8 +234,12 @@ fn compute_loc_delta(repo_path: &str) -> Option<LocDelta> {
 }
 
 fn general_pty_size(state: &AppState, term_cols: u16, term_rows: u16) -> (u16, u16) {
+    pane_pty_size(state, term_cols, term_rows, PaneId::General)
+}
+
+fn pane_pty_size(state: &AppState, term_cols: u16, term_rows: u16, pane_id: PaneId) -> (u16, u16) {
     let (cols, rows) = match state.fullscreen {
-        Some(PaneId::General) => (term_cols, term_rows),
+        Some(id) if id == pane_id => (term_cols, term_rows),
         _ => (term_cols / 2, term_rows / 2),
     };
     (cols.saturating_sub(2).max(1), rows.saturating_sub(2).max(1))

@@ -11,6 +11,7 @@ pub struct AppConfig {
     pub language: Language,
     pub shell: String,
     pub git_repo: Option<String>,
+    pub agents_cmd: Option<Vec<String>>,
 }
 
 impl AppConfig {
