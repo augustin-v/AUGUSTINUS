@@ -15,6 +15,8 @@ pub struct AppState {
     pub general_input_mode: GeneralInputMode,
     pub agents_screen: String,
     pub agents_input_mode: AgentsInputMode,
+    pub agents_cursor_row: u16,
+    pub agents_cursor_col: u16,
     pub loc_delta: Option<LocDelta>,
 }
 
@@ -31,6 +33,8 @@ impl AppState {
             general_input_mode: GeneralInputMode::AppControls,
             agents_screen: String::new(),
             agents_input_mode: AgentsInputMode::PaneControls,
+            agents_cursor_row: 0,
+            agents_cursor_col: 0,
             loc_delta: None,
         }
     }

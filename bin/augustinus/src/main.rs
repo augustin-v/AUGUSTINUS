@@ -169,7 +169,10 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, config: &AppConfig
         state.general_screen = pty.snapshot().contents;
 
         agents_pty.poll();
-        state.agents_screen = agents_pty.snapshot().contents;
+        let agents_snapshot = agents_pty.snapshot();
+        state.agents_screen = agents_snapshot.contents;
+        state.agents_cursor_row = agents_snapshot.cursor_row;
+        state.agents_cursor_col = agents_snapshot.cursor_col;
 
         let size = terminal.size()?;
         let (general_cols, general_rows) = general_pty_size(&state, size.width, size.height);
