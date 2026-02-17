@@ -18,13 +18,42 @@ fn main() -> io::Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let result = run_app(&mut terminal);
+    let result = (|| {
+        run_splash(&mut terminal, Duration::from_millis(2500))?;
+        run_app(&mut terminal)
+    })();
 
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
     terminal.show_cursor()?;
 
     result
+}
+
+fn run_splash(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    duration: Duration,
+) -> io::Result<()> {
+    let start = Instant::now();
+    let tick_rate = Duration::from_millis(33);
+
+    while start.elapsed() < duration {
+        let elapsed = start.elapsed();
+        terminal.draw(|frame| {
+            augustinus_tui::render_splash(frame, elapsed);
+        })?;
+
+        let timeout = tick_rate;
+        if event::poll(timeout)? {
+            if let Event::Key(key) = event::read()? {
+                if should_quit(key) {
+                    return Ok(());
+                }
+            }
+        }
+    }
+
+    Ok(())
 }
 
 fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> {
