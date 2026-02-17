@@ -1,6 +1,7 @@
 use augustinus_app::{AppState, PaneId};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
+    prelude::Stylize,
     widgets::{Block, Borders},
     Frame,
 };
@@ -45,11 +46,16 @@ fn render_pane(frame: &mut Frame<'_>, state: &AppState, id: PaneId, area: Rect, 
     } else {
         theme.border_unfocused
     };
+    let border_style = if focused {
+        theme.base().fg(border_color).bold()
+    } else {
+        theme.base().fg(border_color)
+    };
 
     let block = Block::default()
         .title(title)
         .borders(Borders::ALL)
-        .border_style(theme.base().fg(border_color));
+        .border_style(border_style);
 
     panes::render(frame, state, id, area, block, theme);
 }

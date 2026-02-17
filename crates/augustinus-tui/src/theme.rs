@@ -15,7 +15,7 @@ impl Theme {
             bg: Color::Rgb(4, 18, 36),
             fg: Color::Rgb(235, 245, 255),
             accent: Color::Rgb(120, 220, 255),
-            border_focused: Color::Rgb(235, 245, 255),
+            border_focused: Color::Rgb(255, 36, 90),
             border_unfocused: Color::Rgb(120, 220, 255),
         }
     }
@@ -24,4 +24,3 @@ impl Theme {
         Style::default().fg(self.fg).bg(self.bg)
     }
 }
-
