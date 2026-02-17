@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1"
 augustinus-app = { path = "../../crates/augustinus-app" }
 augustinus-tui = { path = "../../crates/augustinus-tui" }
+augustinus-store = { path = "../../crates/augustinus-store" }
 crossterm = "0.29"
 ratatui = "0.29"
-

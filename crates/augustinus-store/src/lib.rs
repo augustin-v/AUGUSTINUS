@@ -1,2 +1,2 @@
-pub fn smoke() {}
+pub mod config;
 

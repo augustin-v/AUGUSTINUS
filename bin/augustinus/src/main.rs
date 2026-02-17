@@ -4,6 +4,7 @@ use std::{
 };
 
 use augustinus_app::{Action, AppState};
+use augustinus_store::config::{AppConfig, Language};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     execute,
@@ -20,6 +21,16 @@ fn main() -> io::Result<()> {
 
     let result = (|| {
         run_splash(&mut terminal, Duration::from_millis(2500))?;
+        let config = AppConfig::load_or_none().map_err(anyhow_to_io)?;
+        if config.is_none() {
+            let language = run_first_boot(&mut terminal)?;
+            let config = AppConfig {
+                language,
+                shell: "/bin/bash".to_string(),
+                git_repo: None,
+            };
+            let _ = config.save().map_err(anyhow_to_io)?;
+        }
         run_app(&mut terminal)
     })();
 
@@ -28,6 +39,10 @@ fn main() -> io::Result<()> {
     terminal.show_cursor()?;
 
     result
+}
+
+fn anyhow_to_io(error: anyhow::Error) -> io::Error {
+    io::Error::new(io::ErrorKind::Other, error)
 }
 
 fn run_splash(
@@ -54,6 +69,39 @@ fn run_splash(
     }
 
     Ok(())
+}
+
+fn run_first_boot(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<Language> {
+    let mut selected_index: usize = 0;
+    let tick_rate = Duration::from_millis(33);
+
+    loop {
+        terminal.draw(|frame| {
+            augustinus_tui::render_first_boot(frame, selected_index);
+        })?;
+
+        if event::poll(tick_rate)? {
+            if let Event::Key(key) = event::read()? {
+                if should_quit(key) {
+                    return Ok(Language::En);
+                }
+                match key.code {
+                    KeyCode::Up => selected_index = selected_index.saturating_sub(1),
+                    KeyCode::Down => selected_index = (selected_index + 1).min(2),
+                    KeyCode::Enter => return Ok(index_to_language(selected_index)),
+                    _ => {}
+                }
+            }
+        }
+    }
+}
+
+fn index_to_language(index: usize) -> Language {
+    match index {
+        0 => Language::En,
+        1 => Language::Fr,
+        _ => Language::Ja,
+    }
 }
 
 fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> {
