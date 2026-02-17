@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use crate::motivation_anim::{BannerPulse, QuoteTypewriter, Ticker};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Tone {
     Brutal,
@@ -9,6 +11,9 @@ pub enum Tone {
 
 pub const DEFAULT_ROTATE_EVERY: Duration = Duration::from_secs(15);
 pub const DEFAULT_IDLE_THRESHOLD: Duration = Duration::from_secs(60);
+pub const BANNER_PULSE_PERIOD: Duration = Duration::from_millis(900);
+pub const QUOTE_TYPEWRITER_SPEED_CPS: u32 = 50;
+pub const TICKER_SPEED_CPS: u32 = 18;
 
 static BRUTAL_QUOTES: &[&str] = &[
     "Your biological clock advances whether you code or not.",
@@ -53,6 +58,9 @@ pub struct MotivationState {
     last_quote_index: Option<usize>,
     quote: &'static str,
     pub idle: IdleTracker,
+    pub pulse: BannerPulse,
+    pub typewriter: QuoteTypewriter,
+    pub ticker: Ticker,
 }
 
 impl MotivationState {
@@ -63,6 +71,8 @@ impl MotivationState {
             .first()
             .copied()
             .unwrap_or("...");
+        let mut typewriter = QuoteTypewriter::new(QUOTE_TYPEWRITER_SPEED_CPS);
+        typewriter.set_text(quote);
         Self {
             default_tone,
             current_tone,
@@ -71,6 +81,9 @@ impl MotivationState {
             last_quote_index: Some(0),
             quote,
             idle: IdleTracker::new(idle_threshold),
+            pulse: BannerPulse::new(BANNER_PULSE_PERIOD),
+            typewriter,
+            ticker: Ticker::new(TICKER_SPEED_CPS),
         }
     }
 
@@ -103,6 +116,10 @@ impl MotivationState {
             self.rotate_elapsed -= self.rotate_every;
             self.rotate_quote();
         }
+
+        self.pulse.tick(dt);
+        self.typewriter.tick(dt);
+        self.ticker.tick(dt);
     }
 
     fn set_tone(&mut self, tone: Tone) {
@@ -119,6 +136,7 @@ impl MotivationState {
         if list.is_empty() {
             self.quote = "...";
             self.last_quote_index = None;
+            self.typewriter.set_text(self.quote);
             return;
         }
 
@@ -135,6 +153,7 @@ impl MotivationState {
 
         self.quote = list[next_index];
         self.last_quote_index = Some(next_index);
+        self.typewriter.set_text(self.quote);
     }
 }
 

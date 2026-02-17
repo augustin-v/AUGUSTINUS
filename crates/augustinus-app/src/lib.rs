@@ -1,6 +1,7 @@
 mod action;
 mod focus;
 mod motivation;
+pub mod motivation_anim;
 mod stats;
 mod panes;
 mod state;
