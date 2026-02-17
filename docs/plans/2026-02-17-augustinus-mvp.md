@@ -146,7 +146,7 @@ First boot behavior:
 ## Risk Analysis (specific to this build)
 
 1) **PTY/terminal emulation fidelity**: `vt100` may not render all modern TUIs perfectly. Mitigation: start with `bash + coreutils`, document limitations, consider swapping to `wezterm-term` later.
-2) **Input handling conflicts**: shell apps expect raw mode; our TUI also uses raw mode. Mitigation: default GENERAL to app-controls so navigation always works; toggle terminal pass-through with `^` (Shift+6) to route key events directly to the PTY when desired; avoid global shortcuts that interfere with terminal apps.
+2) **Input handling conflicts**: shell apps expect raw mode; our TUI also uses raw mode. Mitigation: when GENERAL is focused, default to terminal input (locked) so typing works immediately; press `Esc` to return to app-controls for pane navigation; leaving GENERAL always resets to app-controls; avoid global shortcuts that interfere with terminal apps.
 3) **Performance on ARM64**: full redraw at high FPS can stutter. Mitigation: dirty-render and cap FPS; use incremental updates for PTY.
 4) **Data corruption on power loss**: SD cards are fragile. Mitigation: SQLite WAL mode, fsync tuning, buffered writes, clear “unsafe shutdown” detection.
 5) **Secrets**: AI API keys must not be in logs. Mitigation: `secrecy` + redact logs; read key from `AUGUSTINUS_API_KEY` env var or a root-readable file.
