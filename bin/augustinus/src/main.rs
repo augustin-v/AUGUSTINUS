@@ -3,7 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use augustinus_app::{Action, AppState, LocDelta, PaneId};
+use augustinus_app::{Action, AppState, GeneralInputMode, LocDelta, PaneId};
 use augustinus_pty::PtySession;
 use augustinus_store::config::{AppConfig, Language};
 use augustinus_store::db::Store;
@@ -115,7 +115,6 @@ fn index_to_language(index: usize) -> Language {
 fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, config: &AppConfig) -> io::Result<()> {
     let mut state = AppState::new_for_test();
     let store = init_store_and_load_stats(&mut state)?;
-    let mut leader_armed = false;
     let mut git_poll_elapsed = Duration::from_secs(30);
 
     let size = terminal.size()?;
@@ -146,7 +145,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, config: &AppConfig
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 state.on_activity();
-                if handle_key(key, &mut state, &mut leader_armed, &mut pty) {
+                if handle_key(key, &mut state, &mut pty) {
                     break;
                 }
                 if let Some(cmd) = state.last_command.take() {
@@ -249,19 +248,8 @@ fn should_quit(key: KeyEvent) -> bool {
 fn handle_key(
     key: KeyEvent,
     state: &mut AppState,
-    leader_armed: &mut bool,
     pty: &mut PtySession,
 ) -> bool {
-    if key.code == KeyCode::Char(' ') && key.modifiers.contains(KeyModifiers::CONTROL) {
-        *leader_armed = true;
-        return false;
-    }
-
-    if state.focused == PaneId::General && !*leader_armed && state.command.is_none() {
-        let _ = pty.send_key(key);
-        return false;
-    }
-
     if state.command.is_some() {
         match key.code {
             KeyCode::Esc => state.apply(Action::ExitCommandMode),
@@ -275,8 +263,20 @@ fn handle_key(
         return false;
     }
 
-    if *leader_armed {
-        *leader_armed = false;
+    if key.code == KeyCode::Char('^')
+        && !key
+            .modifiers
+            .contains(KeyModifiers::CONTROL | KeyModifiers::ALT)
+    {
+        state.apply(Action::ToggleGeneralInputMode);
+        return false;
+    }
+
+    if state.focused == PaneId::General
+        && state.general_input_mode == GeneralInputMode::TerminalPassthrough
+    {
+        let _ = pty.send_key(key);
+        return false;
     }
 
     if key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
