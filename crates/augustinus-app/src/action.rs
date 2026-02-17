@@ -5,6 +5,7 @@ pub enum Action {
     FocusUp,
     FocusDown,
     RotateFocus,
+    ToggleGeneralInputMode,
     EnterFullscreen,
     ExitFullscreen,
     EnterCommandMode,
