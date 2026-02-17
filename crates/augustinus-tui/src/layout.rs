@@ -6,7 +6,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::{panes, theme::Theme};
+use crate::{command_overlay, panes, theme::Theme};
 
 pub fn render_root(frame: &mut Frame<'_>, state: &mut AppState) {
     let theme = Theme::arctic();
@@ -14,6 +14,7 @@ pub fn render_root(frame: &mut Frame<'_>, state: &mut AppState) {
 
     if let Some(fullscreen) = state.fullscreen {
         render_pane(frame, state, fullscreen, frame.area(), &theme);
+        command_overlay::render(frame, state, &theme);
         return;
     }
 
@@ -29,6 +30,7 @@ pub fn render_root(frame: &mut Frame<'_>, state: &mut AppState) {
     render_pane(frame, state, PaneId::General, tr, &theme);
     render_pane(frame, state, PaneId::Agents, bl, &theme);
     render_pane(frame, state, PaneId::Stats, br, &theme);
+    command_overlay::render(frame, state, &theme);
 }
 
 fn split_h(area: Rect) -> [Rect; 2] {

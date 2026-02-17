@@ -1,3 +1,4 @@
+mod command_overlay;
 mod first_boot;
 mod layout;
 mod panes;
