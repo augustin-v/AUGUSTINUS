@@ -5,6 +5,7 @@ pub struct AppState {
     pub focused: PaneId,
     pub fullscreen: Option<PaneId>,
     pub command: Option<String>,
+    pub last_command: Option<String>,
 }
 
 impl AppState {
@@ -13,6 +14,7 @@ impl AppState {
             focused: PaneId::Motivation,
             fullscreen: None,
             command: None,
+            last_command: None,
         }
     }
 
@@ -27,6 +29,21 @@ impl AppState {
             Action::ExitFullscreen => self.fullscreen = None,
             Action::EnterCommandMode => self.command = Some(String::new()),
             Action::ExitCommandMode => self.command = None,
+            Action::CommandAppend(ch) => {
+                if let Some(buffer) = self.command.as_mut() {
+                    buffer.push(ch);
+                }
+            }
+            Action::CommandBackspace => {
+                if let Some(buffer) = self.command.as_mut() {
+                    buffer.pop();
+                }
+            }
+            Action::SubmitCommand => {
+                if let Some(buffer) = self.command.take() {
+                    self.last_command = Some(buffer);
+                }
+            }
         }
     }
 }
@@ -66,4 +83,3 @@ fn focus_down(current: PaneId) -> PaneId {
         PaneId::Stats => PaneId::Stats,
     }
 }
-

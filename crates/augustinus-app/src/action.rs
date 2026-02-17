@@ -9,5 +9,7 @@ pub enum Action {
     ExitFullscreen,
     EnterCommandMode,
     ExitCommandMode,
+    CommandAppend(char),
+    CommandBackspace,
+    SubmitCommand,
 }
-

@@ -43,9 +43,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> 
                 if should_quit(key) {
                     break;
                 }
-                if let Some(action) = key_to_action(key) {
-                    state.apply(action);
-                }
+                handle_key(key, &mut state);
             }
         }
 
@@ -61,14 +59,33 @@ fn should_quit(key: KeyEvent) -> bool {
     key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL)
 }
 
-fn key_to_action(key: KeyEvent) -> Option<Action> {
+fn handle_key(key: KeyEvent, state: &mut AppState) {
+    if state.command.is_some() {
+        match key.code {
+            KeyCode::Esc => state.apply(Action::ExitCommandMode),
+            KeyCode::Enter => state.apply(Action::SubmitCommand),
+            KeyCode::Backspace => state.apply(Action::CommandBackspace),
+            KeyCode::Char(ch) if is_printable(ch) && key.modifiers.is_empty() => {
+                state.apply(Action::CommandAppend(ch));
+            }
+            _ => {}
+        }
+        return;
+    }
+
     match key.code {
-        KeyCode::Char('h') => Some(Action::FocusLeft),
-        KeyCode::Char('j') => Some(Action::FocusDown),
-        KeyCode::Char('k') => Some(Action::FocusUp),
-        KeyCode::Char('l') => Some(Action::FocusRight),
-        KeyCode::Tab => Some(Action::RotateFocus),
-        _ => None,
+        KeyCode::Char('h') => state.apply(Action::FocusLeft),
+        KeyCode::Char('j') => state.apply(Action::FocusDown),
+        KeyCode::Char('k') => state.apply(Action::FocusUp),
+        KeyCode::Char('l') => state.apply(Action::FocusRight),
+        KeyCode::Tab => state.apply(Action::RotateFocus),
+        KeyCode::Enter => state.apply(Action::EnterFullscreen),
+        KeyCode::Esc => state.apply(Action::ExitFullscreen),
+        KeyCode::Char(':') => state.apply(Action::EnterCommandMode),
+        _ => {}
     }
 }
 
+fn is_printable(ch: char) -> bool {
+    !ch.is_control()
+}
