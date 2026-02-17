@@ -18,6 +18,9 @@ pub const TICKER_SPEED_CPS: u32 = 18;
 pub const DAILY_FOCUS_GOAL_SECS: u64 = 2 * 60 * 60;
 pub const DEFAULT_TICKER_TEXT: &str = "LOCK IN • NO MERCY • COMPOUND TODAY • STAY DANGEROUS • ONE MORE REP •";
 pub const PARTICLE_COUNT: usize = 48;
+pub const BURST_TTL: Duration = Duration::from_millis(900);
+pub const COOL_DOWN_TTL: Duration = Duration::from_millis(600);
+pub const WAKE_PULSE_TTL: Duration = Duration::from_millis(700);
 
 static BRUTAL_QUOTES: &[&str] = &[
     "Your biological clock advances whether you code or not.",
@@ -66,6 +69,9 @@ pub struct MotivationState {
     pub typewriter: QuoteTypewriter,
     pub ticker: Ticker,
     pub particles: ParticleField,
+    burst_remaining: Duration,
+    cool_down_remaining: Duration,
+    wake_pulse_remaining: Duration,
 }
 
 impl MotivationState {
@@ -92,6 +98,9 @@ impl MotivationState {
             typewriter,
             ticker,
             particles: ParticleField::new(Seed(1), 1, 1, PARTICLE_COUNT),
+            burst_remaining: Duration::ZERO,
+            cool_down_remaining: Duration::ZERO,
+            wake_pulse_remaining: Duration::ZERO,
         }
     }
 
@@ -107,6 +116,7 @@ impl MotivationState {
         let was_idle = self.idle.is_idle();
         self.idle.on_activity();
         if was_idle {
+            self.on_wake_from_idle();
             self.set_tone(self.default_tone);
         }
     }
@@ -129,10 +139,40 @@ impl MotivationState {
         self.typewriter.tick(dt);
         self.ticker.tick(dt);
         self.particles.tick(dt);
+
+        self.burst_remaining = self.burst_remaining.saturating_sub(dt);
+        self.cool_down_remaining = self.cool_down_remaining.saturating_sub(dt);
+        self.wake_pulse_remaining = self.wake_pulse_remaining.saturating_sub(dt);
     }
 
     pub fn set_particle_bounds(&mut self, width: u16, height: u16) {
         self.particles.resize(width, height);
+    }
+
+    pub fn on_focus_start(&mut self) {
+        self.burst_remaining = BURST_TTL;
+        self.particles.trigger_burst(24, BURST_TTL);
+    }
+
+    pub fn on_focus_stop(&mut self) {
+        self.cool_down_remaining = COOL_DOWN_TTL;
+    }
+
+    pub fn on_wake_from_idle(&mut self) {
+        self.wake_pulse_remaining = WAKE_PULSE_TTL;
+        self.particles.trigger_burst(16, WAKE_PULSE_TTL);
+    }
+
+    pub fn burst_remaining(&self) -> Duration {
+        self.burst_remaining
+    }
+
+    pub fn cool_down_remaining(&self) -> Duration {
+        self.cool_down_remaining
+    }
+
+    pub fn wake_pulse_remaining(&self) -> Duration {
+        self.wake_pulse_remaining
     }
 
     fn set_tone(&mut self, tone: Tone) {

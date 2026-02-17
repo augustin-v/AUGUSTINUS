@@ -20,10 +20,12 @@ impl FocusState {
         self.active_since.is_some()
     }
 
-    pub fn start(&mut self, now: Instant) {
-        if self.active_since.is_none() {
-            self.active_since = Some(now);
+    pub fn start(&mut self, now: Instant) -> bool {
+        if self.active_since.is_some() {
+            return false;
         }
+        self.active_since = Some(now);
+        true
     }
 
     pub fn stop(&mut self, now: Instant) -> Option<Duration> {
@@ -51,4 +53,3 @@ impl FocusState {
         self.streak_days = days;
     }
 }
-

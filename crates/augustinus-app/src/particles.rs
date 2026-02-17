@@ -3,6 +3,20 @@ use std::time::Duration;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Seed(pub u64);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ParticleKind {
+    Background,
+    Burst,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RenderPoint {
+    pub x: u16,
+    pub y: u16,
+    pub ch: char,
+    pub kind: ParticleKind,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParticleField {
     rng: Lcg,
@@ -10,7 +24,7 @@ pub struct ParticleField {
     height: u16,
     particles: Vec<Particle>,
     bursts: Vec<BurstParticle>,
-    render_cache: Vec<(u16, u16, char)>,
+    render_cache: Vec<RenderPoint>,
 }
 
 impl ParticleField {
@@ -86,12 +100,15 @@ impl ParticleField {
         self.rebuild_cache();
     }
 
-    pub fn points(&self) -> &[(u16, u16, char)] {
+    pub fn points(&self) -> &[RenderPoint] {
         &self.render_cache
     }
 
     pub fn snapshot(&self) -> Vec<(u16, u16, char)> {
-        self.render_cache.clone()
+        self.render_cache
+            .iter()
+            .map(|p| (p.x, p.y, p.ch))
+            .collect()
     }
 
     fn rebuild_cache(&mut self) {
@@ -99,11 +116,20 @@ impl ParticleField {
         self.render_cache
             .reserve(self.particles.len().saturating_add(self.bursts.len()));
         for p in &self.particles {
-            self.render_cache.push((p.x, p.y_cell(self.height), p.glyph));
+            self.render_cache.push(RenderPoint {
+                x: p.x,
+                y: p.y_cell(self.height),
+                ch: p.glyph,
+                kind: ParticleKind::Background,
+            });
         }
         for b in &self.bursts {
-            self.render_cache
-                .push((b.x_cell(self.width), b.y_cell(self.height), b.glyph));
+            self.render_cache.push(RenderPoint {
+                x: b.x_cell(self.width),
+                y: b.y_cell(self.height),
+                ch: b.glyph,
+                kind: ParticleKind::Burst,
+            });
         }
     }
 }

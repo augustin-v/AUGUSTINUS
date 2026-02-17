@@ -229,7 +229,9 @@ fn handle_command(cmd: &str, state: &mut AppState, store: &Store) -> io::Result<
         match arg {
             "start" => {
                 store.insert_event("focus_start", "{}").map_err(anyhow_to_io)?;
-                state.focus.start(Instant::now());
+                if state.focus.start(Instant::now()) {
+                    state.motivation.on_focus_start();
+                }
             }
             "stop" => {
                 if let Some(elapsed) = state.focus.stop(Instant::now()) {
@@ -241,6 +243,7 @@ fn handle_command(cmd: &str, state: &mut AppState, store: &Store) -> io::Result<
                     state.focus.add_focus_seconds_today(secs.max(0) as u64);
                     let streak = store.streak_days_ending_today().map_err(anyhow_to_io)?;
                     state.focus.set_streak_days(streak);
+                    state.motivation.on_focus_stop();
                 }
             }
             _ => {}

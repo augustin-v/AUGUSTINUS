@@ -8,7 +8,7 @@ use ratatui::{
 
 use crate::theme::Theme;
 use crate::widgets::big_text::BigText;
-use augustinus_app::{AppState, Tone, DAILY_FOCUS_GOAL_SECS};
+use augustinus_app::{particles::ParticleKind, AppState, Tone, DAILY_FOCUS_GOAL_SECS};
 
 pub fn render(
     frame: &mut Frame<'_>,
@@ -45,13 +45,17 @@ pub fn render(
 
 fn render_particles(frame: &mut Frame<'_>, state: &AppState, inner: ratatui::layout::Rect, theme: &Theme) {
     let buf = frame.buffer_mut();
-    for (x, y, ch) in state.motivation.particles.points() {
-        let gx = inner.x.saturating_add(*x).min(inner.right().saturating_sub(1));
-        let gy = inner.y.saturating_add(*y).min(inner.bottom().saturating_sub(1));
+    for p in state.motivation.particles.points() {
+        let gx = inner.x.saturating_add(p.x).min(inner.right().saturating_sub(1));
+        let gy = inner.y.saturating_add(p.y).min(inner.bottom().saturating_sub(1));
         if gx < inner.right() && gy < inner.bottom() {
             if let Some(cell) = buf.cell_mut((gx, gy)) {
-                cell.set_char(*ch);
-                cell.set_style(theme.base().fg(theme.accent).add_modifier(Modifier::DIM));
+                cell.set_char(p.ch);
+                let style = match p.kind {
+                    ParticleKind::Background => theme.base().fg(theme.accent).add_modifier(Modifier::DIM),
+                    ParticleKind::Burst => theme.base().fg(theme.border_focused).add_modifier(Modifier::BOLD),
+                };
+                cell.set_style(style);
             }
         }
     }
@@ -127,6 +131,12 @@ fn render_banner(frame: &mut Frame<'_>, state: &AppState, area: ratatui::layout:
         style = style.add_modifier(Modifier::BOLD);
     } else if intensity < 60 {
         style = style.add_modifier(Modifier::DIM);
+    }
+    if state.motivation.cool_down_remaining() > std::time::Duration::ZERO {
+        style = style.add_modifier(Modifier::DIM);
+    }
+    if state.motivation.wake_pulse_remaining() > std::time::Duration::ZERO {
+        style = style.add_modifier(Modifier::BOLD);
     }
 
     let big = BigText::new(banner);
