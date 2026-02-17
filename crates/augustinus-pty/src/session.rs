@@ -23,7 +23,7 @@ pub struct PtySession {
 }
 
 impl PtySession {
-    pub fn spawn(shell: &str, cols: u16, rows: u16) -> Result<Self> {
+    pub fn spawn_command(program: &str, args: &[&str], cols: u16, rows: u16) -> Result<Self> {
         let pty_system = native_pty_system();
         let pair = pty_system
             .openpty(PtySize {
@@ -34,9 +34,13 @@ impl PtySession {
             })
             .context("open pty")?;
 
-        let mut cmd = CommandBuilder::new(shell);
+        let mut cmd = CommandBuilder::new(program);
+        cmd.args(args);
         cmd.env("TERM", "xterm-256color");
-        let _child = pair.slave.spawn_command(cmd).context("spawn shell")?;
+        let _child = pair
+            .slave
+            .spawn_command(cmd)
+            .with_context(|| format!("spawn command: {program}"))?;
 
         let mut reader = pair.master.try_clone_reader().context("clone pty reader")?;
         let writer = pair.master.take_writer().context("take pty writer")?;
@@ -64,6 +68,10 @@ impl PtySession {
             rx,
             _reader_thread: reader_thread,
         })
+    }
+
+    pub fn spawn(shell: &str, cols: u16, rows: u16) -> Result<Self> {
+        Self::spawn_command(shell, &[], cols, rows).context("spawn shell")
     }
 
     pub fn resize(&mut self, cols: u16, rows: u16) -> Result<()> {
