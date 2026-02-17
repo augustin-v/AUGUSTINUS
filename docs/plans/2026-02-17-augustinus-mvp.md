@@ -146,7 +146,7 @@ First boot behavior:
 ## Risk Analysis (specific to this build)
 
 1) **PTY/terminal emulation fidelity**: `vt100` may not render all modern TUIs perfectly. Mitigation: start with `bash + coreutils`, document limitations, consider swapping to `wezterm-term` later.
-2) **Input handling conflicts**: shell apps expect raw mode; our TUI also uses raw mode. Mitigation: keep PTY as “rendered terminal” and route key events directly to PTY when GENERAL focused; avoid global shortcuts unless prefixed (e.g., `Ctrl-Space` leader later).
+2) **Input handling conflicts**: shell apps expect raw mode; our TUI also uses raw mode. Mitigation: default GENERAL to app-controls so navigation always works; toggle terminal pass-through with `^` (Shift+6) to route key events directly to the PTY when desired; avoid global shortcuts that interfere with terminal apps.
 3) **Performance on ARM64**: full redraw at high FPS can stutter. Mitigation: dirty-render and cap FPS; use incremental updates for PTY.
 4) **Data corruption on power loss**: SD cards are fragile. Mitigation: SQLite WAL mode, fsync tuning, buffered writes, clear “unsafe shutdown” detection.
 5) **Secrets**: AI API keys must not be in logs. Mitigation: `secrecy` + redact logs; read key from `AUGUSTINUS_API_KEY` env var or a root-readable file.
@@ -731,4 +731,3 @@ git commit -m "chore: polish runtime cleanup and performance caps"
 - Add calories + LOCK IN editing UI and historical charts.
 - Add plugin registry for panes and “agents” backends.
 - Replace vt100 stack if needed for richer terminal apps.
-
