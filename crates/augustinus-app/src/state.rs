@@ -1,4 +1,5 @@
 use crate::{Action, PaneId};
+use crate::{motivation::DEFAULT_IDLE_THRESHOLD, MotivationState};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppState {
@@ -6,6 +7,7 @@ pub struct AppState {
     pub fullscreen: Option<PaneId>,
     pub command: Option<String>,
     pub last_command: Option<String>,
+    pub motivation: MotivationState,
 }
 
 impl AppState {
@@ -15,6 +17,7 @@ impl AppState {
             fullscreen: None,
             command: None,
             last_command: None,
+            motivation: MotivationState::new(DEFAULT_IDLE_THRESHOLD),
         }
     }
 
@@ -45,6 +48,14 @@ impl AppState {
                 }
             }
         }
+    }
+
+    pub fn on_activity(&mut self) {
+        self.motivation.on_activity();
+    }
+
+    pub fn tick(&mut self, dt: std::time::Duration) {
+        self.motivation.tick(dt);
     }
 }
 

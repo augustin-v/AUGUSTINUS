@@ -7,6 +7,7 @@ use augustinus_app::PaneId;
 use ratatui::{widgets::Block, Frame};
 
 use crate::theme::Theme;
+use augustinus_app::AppState;
 
 pub fn title(id: PaneId) -> &'static str {
     match id {
@@ -17,12 +18,18 @@ pub fn title(id: PaneId) -> &'static str {
     }
 }
 
-pub fn render(frame: &mut Frame<'_>, id: PaneId, area: ratatui::layout::Rect, block: Block<'static>, theme: &Theme) {
+pub fn render(
+    frame: &mut Frame<'_>,
+    state: &AppState,
+    id: PaneId,
+    area: ratatui::layout::Rect,
+    block: Block<'static>,
+    theme: &Theme,
+) {
     match id {
-        PaneId::Motivation => motivation::render(frame, area, block, theme),
+        PaneId::Motivation => motivation::render(frame, state, area, block, theme),
         PaneId::General => general::render(frame, area, block, theme),
         PaneId::Agents => agents::render(frame, area, block, theme),
         PaneId::Stats => stats::render(frame, area, block, theme),
     }
 }
-

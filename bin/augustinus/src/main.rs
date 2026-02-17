@@ -120,11 +120,14 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> 
                 if should_quit(key) {
                     break;
                 }
+                state.on_activity();
                 handle_key(key, &mut state);
             }
         }
 
         if last_tick.elapsed() >= tick_rate {
+            let dt = last_tick.elapsed();
+            state.tick(dt);
             last_tick = Instant::now();
         }
     }

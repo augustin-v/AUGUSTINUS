@@ -51,6 +51,5 @@ fn render_pane(frame: &mut Frame<'_>, state: &AppState, id: PaneId, area: Rect, 
         .borders(Borders::ALL)
         .border_style(theme.base().fg(border_color));
 
-    panes::render(frame, id, area, block, theme);
+    panes::render(frame, state, id, area, block, theme);
 }
-
