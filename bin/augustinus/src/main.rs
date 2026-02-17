@@ -293,7 +293,15 @@ fn handle_key(
         KeyCode::Char('k') => state.apply(Action::FocusUp),
         KeyCode::Char('l') => state.apply(Action::FocusRight),
         KeyCode::Tab => state.apply(Action::RotateFocus),
-        KeyCode::Enter => state.apply(Action::EnterFullscreen),
+        KeyCode::Enter => {
+            if state.focused == PaneId::General
+                && state.general_input_mode == GeneralInputMode::AppControls
+            {
+                state.apply(Action::EnterGeneralTerminalMode);
+                return false;
+            }
+            state.apply(Action::EnterFullscreen)
+        }
         KeyCode::Esc => {
             if state.fullscreen.is_some() {
                 state.apply(Action::ExitFullscreen)

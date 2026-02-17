@@ -6,7 +6,7 @@ use ratatui::{
 };
 
 use crate::theme::Theme;
-use augustinus_app::{AppState, GeneralInputMode};
+use augustinus_app::{AppState, GeneralInputMode, PaneId};
 
 pub fn render(
     frame: &mut Frame<'_>,
@@ -23,9 +23,19 @@ pub fn render(
         );
         lines.push(Line::from(""));
     } else {
-        lines.push(Line::from("Press Enter to fullscreen; Focus with h/j/k/l; \":\" commands").style(
-            theme.base().fg(theme.accent),
-        ));
+        if state.focused == PaneId::General {
+            lines.push(
+                Line::from(
+                    "Enter: enter terminal mode; h/j/k/l Tab: move focus; \":\" commands",
+                )
+                .style(theme.base().fg(theme.accent)),
+            );
+        } else {
+            lines.push(
+                Line::from("Press Enter to fullscreen; Focus with h/j/k/l; \":\" commands")
+                    .style(theme.base().fg(theme.accent)),
+            );
+        }
         lines.push(Line::from(""));
     }
 
