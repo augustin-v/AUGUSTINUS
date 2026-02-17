@@ -10,6 +10,7 @@ mod input;
 pub use action::Action;
 pub use focus::FocusState;
 pub use motivation::{IdleTracker, MotivationState, Tone};
+pub use motivation::DAILY_FOCUS_GOAL_SECS;
 pub use stats::LocDelta;
 pub use panes::PaneId;
 pub use state::AppState;

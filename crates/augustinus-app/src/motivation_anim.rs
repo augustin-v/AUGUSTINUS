@@ -125,4 +125,28 @@ impl Ticker {
     pub fn offset_cols(&self) -> u32 {
         self.offset_cols
     }
+
+    pub fn window(&self, width: u16) -> String {
+        let width = width as usize;
+        if width == 0 {
+            return String::new();
+        }
+
+        if self.text.is_empty() {
+            return " ".repeat(width);
+        }
+
+        let len = self.text.chars().count();
+        if len == 0 {
+            return " ".repeat(width);
+        }
+
+        let start = (self.offset_cols as usize) % len;
+        self.text
+            .chars()
+            .cycle()
+            .skip(start)
+            .take(width)
+            .collect()
+    }
 }

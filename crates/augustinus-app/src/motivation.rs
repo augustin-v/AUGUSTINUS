@@ -14,6 +14,8 @@ pub const DEFAULT_IDLE_THRESHOLD: Duration = Duration::from_secs(60);
 pub const BANNER_PULSE_PERIOD: Duration = Duration::from_millis(900);
 pub const QUOTE_TYPEWRITER_SPEED_CPS: u32 = 50;
 pub const TICKER_SPEED_CPS: u32 = 18;
+pub const DAILY_FOCUS_GOAL_SECS: u64 = 2 * 60 * 60;
+pub const DEFAULT_TICKER_TEXT: &str = "LOCK IN • NO MERCY • COMPOUND TODAY • STAY DANGEROUS • ONE MORE REP •";
 
 static BRUTAL_QUOTES: &[&str] = &[
     "Your biological clock advances whether you code or not.",
@@ -73,6 +75,8 @@ impl MotivationState {
             .unwrap_or("...");
         let mut typewriter = QuoteTypewriter::new(QUOTE_TYPEWRITER_SPEED_CPS);
         typewriter.set_text(quote);
+        let mut ticker = Ticker::new(TICKER_SPEED_CPS);
+        ticker.set_text(DEFAULT_TICKER_TEXT);
         Self {
             default_tone,
             current_tone,
@@ -83,7 +87,7 @@ impl MotivationState {
             idle: IdleTracker::new(idle_threshold),
             pulse: BannerPulse::new(BANNER_PULSE_PERIOD),
             typewriter,
-            ticker: Ticker::new(TICKER_SPEED_CPS),
+            ticker,
         }
     }
 
