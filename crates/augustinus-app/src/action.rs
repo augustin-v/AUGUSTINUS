@@ -7,6 +7,8 @@ pub enum Action {
     RotateFocus,
     EnterGeneralTerminalMode,
     ExitGeneralTerminalMode,
+    EnterAgentsTerminalMode,
+    ExitAgentsTerminalMode,
     EnterFullscreen,
     ExitFullscreen,
     EnterCommandMode,

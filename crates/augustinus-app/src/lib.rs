@@ -1,4 +1,5 @@
 mod action;
+mod agents_terminal;
 mod focus;
 mod motivation;
 pub mod motivation_anim;
@@ -9,6 +10,7 @@ mod state;
 mod input;
 
 pub use action::Action;
+pub use agents_terminal::AgentsInputMode;
 pub use focus::FocusState;
 pub use motivation::{IdleTracker, MotivationState, Tone};
 pub use motivation::DAILY_FOCUS_GOAL_SECS;

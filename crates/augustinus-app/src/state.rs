@@ -1,4 +1,4 @@
-use crate::{Action, GeneralInputMode, PaneId};
+use crate::{Action, AgentsInputMode, GeneralInputMode, PaneId};
 use crate::FocusState;
 use crate::{motivation::DEFAULT_IDLE_THRESHOLD, MotivationState};
 use crate::LocDelta;
@@ -13,6 +13,8 @@ pub struct AppState {
     pub focus: FocusState,
     pub general_screen: String,
     pub general_input_mode: GeneralInputMode,
+    pub agents_screen: String,
+    pub agents_input_mode: AgentsInputMode,
     pub loc_delta: Option<LocDelta>,
 }
 
@@ -27,6 +29,8 @@ impl AppState {
             focus: FocusState::new_for_test(),
             general_screen: String::new(),
             general_input_mode: GeneralInputMode::AppControls,
+            agents_screen: String::new(),
+            agents_input_mode: AgentsInputMode::PaneControls,
             loc_delta: None,
         }
     }
@@ -36,22 +40,37 @@ impl AppState {
             Action::FocusLeft => {
                 self.focused = focus_left(self.focused);
                 self.general_input_mode = GeneralInputMode::AppControls;
+                if self.focused != PaneId::Agents {
+                    self.agents_input_mode = AgentsInputMode::PaneControls;
+                }
             }
             Action::FocusRight => {
                 self.focused = focus_right(self.focused);
                 self.general_input_mode = GeneralInputMode::AppControls;
+                if self.focused != PaneId::Agents {
+                    self.agents_input_mode = AgentsInputMode::PaneControls;
+                }
             }
             Action::FocusUp => {
                 self.focused = focus_up(self.focused);
                 self.general_input_mode = GeneralInputMode::AppControls;
+                if self.focused != PaneId::Agents {
+                    self.agents_input_mode = AgentsInputMode::PaneControls;
+                }
             }
             Action::FocusDown => {
                 self.focused = focus_down(self.focused);
                 self.general_input_mode = GeneralInputMode::AppControls;
+                if self.focused != PaneId::Agents {
+                    self.agents_input_mode = AgentsInputMode::PaneControls;
+                }
             }
             Action::RotateFocus => {
                 self.focused = self.focused.next();
                 self.general_input_mode = GeneralInputMode::AppControls;
+                if self.focused != PaneId::Agents {
+                    self.agents_input_mode = AgentsInputMode::PaneControls;
+                }
             }
             Action::EnterGeneralTerminalMode => {
                 if self.focused == PaneId::General {
@@ -61,6 +80,16 @@ impl AppState {
             Action::ExitGeneralTerminalMode => {
                 if self.focused == PaneId::General {
                     self.general_input_mode = GeneralInputMode::AppControls;
+                }
+            }
+            Action::EnterAgentsTerminalMode => {
+                if self.focused == PaneId::Agents {
+                    self.agents_input_mode = AgentsInputMode::CodexLocked;
+                }
+            }
+            Action::ExitAgentsTerminalMode => {
+                if self.focused == PaneId::Agents {
+                    self.agents_input_mode = AgentsInputMode::PaneControls;
                 }
             }
             Action::EnterFullscreen => self.fullscreen = Some(self.focused),
