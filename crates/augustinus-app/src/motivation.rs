@@ -72,6 +72,8 @@ pub struct MotivationState {
     burst_remaining: Duration,
     cool_down_remaining: Duration,
     wake_pulse_remaining: Duration,
+    ticker_width: u16,
+    ticker_window: String,
 }
 
 impl MotivationState {
@@ -101,6 +103,8 @@ impl MotivationState {
             burst_remaining: Duration::ZERO,
             cool_down_remaining: Duration::ZERO,
             wake_pulse_remaining: Duration::ZERO,
+            ticker_width: 0,
+            ticker_window: String::new(),
         }
     }
 
@@ -140,6 +144,10 @@ impl MotivationState {
         self.ticker.tick(dt);
         self.particles.tick(dt);
 
+        if self.ticker_width > 0 {
+            self.ticker.fill_window(self.ticker_width, &mut self.ticker_window);
+        }
+
         self.burst_remaining = self.burst_remaining.saturating_sub(dt);
         self.cool_down_remaining = self.cool_down_remaining.saturating_sub(dt);
         self.wake_pulse_remaining = self.wake_pulse_remaining.saturating_sub(dt);
@@ -147,6 +155,20 @@ impl MotivationState {
 
     pub fn set_particle_bounds(&mut self, width: u16, height: u16) {
         self.particles.resize(width, height);
+    }
+
+    pub fn set_ticker_width(&mut self, width: u16) {
+        if self.ticker_width == width {
+            return;
+        }
+        self.ticker_width = width;
+        self.ticker_window.clear();
+        self.ticker_window.reserve(width as usize);
+        self.ticker.fill_window(self.ticker_width, &mut self.ticker_window);
+    }
+
+    pub fn ticker_window(&self) -> &str {
+        &self.ticker_window
     }
 
     pub fn on_focus_start(&mut self) {

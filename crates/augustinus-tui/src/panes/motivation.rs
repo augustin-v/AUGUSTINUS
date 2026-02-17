@@ -23,6 +23,7 @@ pub fn render(
     // Keep animation state in the app; renderer informs it of the current pane size.
     // This avoids tying particle coordinates to terminal size outside of MotivationState.
     state.motivation.set_particle_bounds(inner.width, inner.height);
+    state.motivation.set_ticker_width(inner.width);
     render_particles(frame, state, inner, theme);
 
     let chunks = Layout::default()
@@ -228,9 +229,8 @@ fn render_stats(frame: &mut Frame<'_>, state: &AppState, area: ratatui::layout::
 }
 
 fn render_ticker(frame: &mut Frame<'_>, state: &AppState, area: ratatui::layout::Rect, theme: &Theme) {
-    let ticker = state.motivation.ticker.window(area.width);
     frame.render_widget(
-        Paragraph::new(ticker)
+        Paragraph::new(state.motivation.ticker_window())
             .style(theme.base().fg(theme.accent))
             .alignment(Alignment::Left),
         area,

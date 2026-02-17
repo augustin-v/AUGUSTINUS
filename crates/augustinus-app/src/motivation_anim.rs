@@ -126,27 +126,25 @@ impl Ticker {
         self.offset_cols
     }
 
-    pub fn window(&self, width: u16) -> String {
+    pub fn fill_window(&self, width: u16, out: &mut String) {
+        out.clear();
         let width = width as usize;
         if width == 0 {
-            return String::new();
+            return;
         }
 
         if self.text.is_empty() {
-            return " ".repeat(width);
+            out.extend(std::iter::repeat(' ').take(width));
+            return;
         }
 
         let len = self.text.chars().count();
         if len == 0 {
-            return " ".repeat(width);
+            out.extend(std::iter::repeat(' ').take(width));
+            return;
         }
 
         let start = (self.offset_cols as usize) % len;
-        self.text
-            .chars()
-            .cycle()
-            .skip(start)
-            .take(width)
-            .collect()
+        out.extend(self.text.chars().cycle().skip(start).take(width));
     }
 }
