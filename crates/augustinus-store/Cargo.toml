@@ -9,5 +9,7 @@ path = "src/lib.rs"
 [dependencies]
 anyhow = "1"
 augustinus-i18n = { path = "../augustinus-i18n" }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+rusqlite = { version = "0.33", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
