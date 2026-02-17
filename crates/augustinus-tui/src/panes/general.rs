@@ -16,17 +16,18 @@ pub fn render(
     state: &AppState,
 ) {
     let mut lines = Vec::new();
-    if state.general_input_mode == GeneralInputMode::TerminalPassthrough {
+    if state.general_input_mode == GeneralInputMode::TerminalLocked {
         lines.push(
-            Line::from("PASS-THROUGH: terminal input enabled").style(theme.base().fg(theme.accent)),
+            Line::from("TERMINAL MODE (locked) — Esc to return to app controls")
+                .style(theme.base().fg(theme.accent)),
         );
         lines.push(Line::from(""));
+    } else {
+        lines.push(Line::from("Press Enter to fullscreen; Focus with h/j/k/l; \":\" commands").style(
+            theme.base().fg(theme.accent),
+        ));
+        lines.push(Line::from(""));
     }
-    lines.push(Line::from("^ toggles TERMINAL INPUT (pass-through)").style(
-        theme.base().fg(theme.accent),
-    ));
-    lines.push(Line::from("App controls: h/j/k/l Tab : Enter Esc").style(theme.base()));
-    lines.push(Line::from(""));
 
     let contents = if state.general_screen.is_empty() {
         "Starting shell…".to_string()

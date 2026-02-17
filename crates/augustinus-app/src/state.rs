@@ -35,40 +35,52 @@ impl AppState {
         match action {
             Action::FocusLeft => {
                 self.focused = focus_left(self.focused);
-                if self.focused != PaneId::General {
-                    self.general_input_mode = GeneralInputMode::AppControls;
-                }
+                self.general_input_mode = if self.focused == PaneId::General {
+                    GeneralInputMode::TerminalLocked
+                } else {
+                    GeneralInputMode::AppControls
+                };
             }
             Action::FocusRight => {
                 self.focused = focus_right(self.focused);
-                if self.focused != PaneId::General {
-                    self.general_input_mode = GeneralInputMode::AppControls;
-                }
+                self.general_input_mode = if self.focused == PaneId::General {
+                    GeneralInputMode::TerminalLocked
+                } else {
+                    GeneralInputMode::AppControls
+                };
             }
             Action::FocusUp => {
                 self.focused = focus_up(self.focused);
-                if self.focused != PaneId::General {
-                    self.general_input_mode = GeneralInputMode::AppControls;
-                }
+                self.general_input_mode = if self.focused == PaneId::General {
+                    GeneralInputMode::TerminalLocked
+                } else {
+                    GeneralInputMode::AppControls
+                };
             }
             Action::FocusDown => {
                 self.focused = focus_down(self.focused);
-                if self.focused != PaneId::General {
-                    self.general_input_mode = GeneralInputMode::AppControls;
-                }
+                self.general_input_mode = if self.focused == PaneId::General {
+                    GeneralInputMode::TerminalLocked
+                } else {
+                    GeneralInputMode::AppControls
+                };
             }
             Action::RotateFocus => {
                 self.focused = self.focused.next();
-                if self.focused != PaneId::General {
-                    self.general_input_mode = GeneralInputMode::AppControls;
+                self.general_input_mode = if self.focused == PaneId::General {
+                    GeneralInputMode::TerminalLocked
+                } else {
+                    GeneralInputMode::AppControls
+                };
+            }
+            Action::EnterGeneralTerminalMode => {
+                if self.focused == PaneId::General {
+                    self.general_input_mode = GeneralInputMode::TerminalLocked;
                 }
             }
-            Action::ToggleGeneralInputMode => {
+            Action::ExitGeneralTerminalMode => {
                 if self.focused == PaneId::General {
-                    self.general_input_mode = match self.general_input_mode {
-                        GeneralInputMode::AppControls => GeneralInputMode::TerminalPassthrough,
-                        GeneralInputMode::TerminalPassthrough => GeneralInputMode::AppControls,
-                    };
+                    self.general_input_mode = GeneralInputMode::AppControls;
                 }
             }
             Action::EnterFullscreen => self.fullscreen = Some(self.focused),

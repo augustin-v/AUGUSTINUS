@@ -267,18 +267,13 @@ fn handle_key(
         return false;
     }
 
-    if key.code == KeyCode::Char('^')
-        && !key
-            .modifiers
-            .contains(KeyModifiers::CONTROL | KeyModifiers::ALT)
-    {
-        state.apply(Action::ToggleGeneralInputMode);
-        return false;
-    }
-
     if state.focused == PaneId::General
-        && state.general_input_mode == GeneralInputMode::TerminalPassthrough
+        && state.general_input_mode == GeneralInputMode::TerminalLocked
     {
+        if key.code == KeyCode::Esc {
+            state.apply(Action::ExitGeneralTerminalMode);
+            return false;
+        }
         let _ = pty.send_key(key);
         return false;
     }
@@ -294,7 +289,11 @@ fn handle_key(
         KeyCode::Char('l') => state.apply(Action::FocusRight),
         KeyCode::Tab => state.apply(Action::RotateFocus),
         KeyCode::Enter => state.apply(Action::EnterFullscreen),
-        KeyCode::Esc => state.apply(Action::ExitFullscreen),
+        KeyCode::Esc => {
+            if state.fullscreen.is_some() {
+                state.apply(Action::ExitFullscreen)
+            }
+        }
         KeyCode::Char(':') => state.apply(Action::EnterCommandMode),
         _ => {}
     }
