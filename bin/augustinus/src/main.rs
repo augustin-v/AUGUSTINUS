@@ -94,8 +94,12 @@ fn run_first_boot(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Resu
                     return Ok(Language::En);
                 }
                 match key.code {
-                    KeyCode::Up => selected_index = selected_index.saturating_sub(1),
-                    KeyCode::Down => selected_index = (selected_index + 1).min(2),
+                    KeyCode::Char('k') | KeyCode::Up => {
+                        selected_index = selected_index.saturating_sub(1)
+                    }
+                    KeyCode::Char('j') | KeyCode::Down => {
+                        selected_index = (selected_index + 1).min(2)
+                    }
                     KeyCode::Enter => return Ok(index_to_language(selected_index)),
                     _ => {}
                 }

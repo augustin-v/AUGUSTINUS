@@ -53,9 +53,8 @@ pub fn render(frame: &mut Frame<'_>, selected_index: usize) {
         .style(theme.base());
     frame.render_widget(list, list_area);
 
-    let hint = Paragraph::new("↑/↓ to move, Enter to confirm")
+    let hint = Paragraph::new("j/k to move, Enter to confirm (↑/↓ also works)")
         .alignment(Alignment::Center)
         .style(theme.base().fg(theme.accent));
     frame.render_widget(hint, hint_area);
 }
-
