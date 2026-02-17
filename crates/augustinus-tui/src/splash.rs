@@ -10,13 +10,7 @@ use ratatui::{
 
 use crate::theme::Theme;
 
-const ART: &[&str] = &[
-    r"    ___    __  _______  ________________  _   ____  ______",
-    r"   /   |  / / / / ___/ / / / ___/_  __/ / / / / / / / __ \\",
-    r"  / /| | / / / /\__ \ / / / /__  / / / / / / / /_/ / / / /",
-    r" / ___ |/ /_/ /___/ // /_/\___/ /_/ / /_/ / / __  / /_/ / ",
-    r"/_/  |_\____//____/ \____/____/     \____/ /_/ /_/\____/  ",
-];
+const ART_STR: &str = include_str!("../../../augustinus_ascii.txt");
 
 pub fn render(frame: &mut Frame<'_>, elapsed: Duration) {
     let theme = Theme::arctic();
@@ -24,13 +18,21 @@ pub fn render(frame: &mut Frame<'_>, elapsed: Duration) {
     let block = Block::default().style(theme.base());
     frame.render_widget(block, area);
 
+    let art_lines: Vec<&str> = ART_STR.lines().map(|line| line.trim_end()).collect();
+    let height = (art_lines.len() as u16).saturating_add(2);
+    let max_line_len = art_lines.iter().map(|line| line.len()).max().unwrap_or(0);
+    let width = (max_line_len as u16).max(1);
+
     let shimmer = ((elapsed.as_millis() / 120) % 2) == 0;
     let fg = if shimmer { theme.fg } else { theme.accent };
 
+    let rect = centered_rect(area, height, width);
+    let crop_width = rect.width.max(1);
     let text = Text::from(
-        ART.iter()
+        art_lines
+            .iter()
             .enumerate()
-            .map(|(i, line)| Line::styled(*line, line_style(fg, i)))
+            .map(|(i, line)| Line::styled(center_crop(line, crop_width), line_style(fg, i)))
             .collect::<Vec<_>>(),
     );
 
@@ -38,7 +40,7 @@ pub fn render(frame: &mut Frame<'_>, elapsed: Duration) {
         .style(theme.base())
         .alignment(Alignment::Center);
 
-    frame.render_widget(para, centered_rect(area, ART.len() as u16 + 2, 80));
+    frame.render_widget(para, rect);
 }
 
 fn line_style(fg: ratatui::style::Color, index: usize) -> Style {
@@ -47,6 +49,15 @@ fn line_style(fg: ratatui::style::Color, index: usize) -> Style {
         style = style.bold();
     }
     style
+}
+
+fn center_crop(line: &str, width: u16) -> String {
+    let width = width as usize;
+    if width == 0 || line.len() <= width {
+        return line.to_string();
+    }
+    let start = (line.len() - width) / 2;
+    line[start..start + width].to_string()
 }
 
 fn centered_rect(area: Rect, height: u16, width: u16) -> Rect {
@@ -59,4 +70,3 @@ fn centered_rect(area: Rect, height: u16, width: u16) -> Rect {
         height: height.min(area.height),
     }
 }
-
