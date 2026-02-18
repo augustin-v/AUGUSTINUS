@@ -1,10 +1,10 @@
 use augustinus_app::{AppState, DAILY_FOCUS_GOAL_SECS, PaneId, Tone};
 use ratatui::{
+    Frame,
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Modifier, Style},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Cell, Gauge, Paragraph, Row, Table, Wrap},
-    Frame,
 };
 
 use crate::{theme::Theme, widgets::big_text::BigText};
@@ -91,7 +91,7 @@ fn render_streak_card(
     state: &AppState,
 ) {
     let block = Block::default()
-        .title("STREAK")
+        .title(accent_title(theme, "STREAK"))
         .borders(Borders::ALL)
         .style(theme.base());
     let inner = block.inner(area);
@@ -105,21 +105,32 @@ fn render_streak_card(
         .map(|s| {
             Line::from(Span::styled(
                 s,
-                theme
-                    .base()
-                    .fg(theme.accent)
-                    .add_modifier(Modifier::BOLD),
+                theme.base().fg(theme.accent).add_modifier(Modifier::BOLD),
             ))
         })
         .collect();
     lines.push(Line::from(Span::styled("days", theme.base().fg(theme.fg))));
 
-    frame.render_widget(
-        Paragraph::new(Text::from(lines))
-            .style(theme.base())
-            .alignment(Alignment::Center),
-        inner,
-    );
+    let content_height = u16::try_from(lines.len()).unwrap_or(inner.height);
+    let para = Paragraph::new(Text::from(lines))
+        .style(theme.base())
+        .alignment(Alignment::Center);
+
+    if inner.height > content_height {
+        let pad = (inner.height - content_height) / 2;
+        let v = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(pad),
+                Constraint::Length(content_height),
+                Constraint::Min(0),
+            ])
+            .split(inner);
+        let content_area = *v.get(1).unwrap_or(&inner);
+        frame.render_widget(para, content_area);
+    } else {
+        frame.render_widget(para, inner);
+    }
 }
 
 fn render_focus_card(
@@ -129,7 +140,7 @@ fn render_focus_card(
     state: &AppState,
 ) {
     let block = Block::default()
-        .title("FOCUS")
+        .title(accent_title(theme, "FOCUS"))
         .borders(Borders::ALL)
         .style(theme.base());
     let inner = block.inner(area);
@@ -151,18 +162,24 @@ fn render_focus_card(
 
     let top_text = Text::from(vec![
         Line::from(vec![
-            Span::styled("TODAY ", theme.base().fg(theme.fg).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "TODAY ",
+                theme.base().fg(theme.fg).add_modifier(Modifier::BOLD),
+            ),
             Span::styled(
                 format_hms(focus_seconds),
-                theme
-                    .base()
-                    .fg(theme.accent)
-                    .add_modifier(Modifier::BOLD),
+                theme.base().fg(theme.accent).add_modifier(Modifier::BOLD),
             ),
         ]),
         Line::from(vec![
-            Span::styled("GOAL  ", theme.base().fg(theme.fg).add_modifier(Modifier::BOLD)),
-            Span::styled(format_hms(DAILY_FOCUS_GOAL_SECS), theme.base().fg(theme.accent)),
+            Span::styled(
+                "GOAL  ",
+                theme.base().fg(theme.fg).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format_hms(DAILY_FOCUS_GOAL_SECS),
+                theme.base().fg(theme.accent),
+            ),
         ]),
     ]);
 
@@ -188,7 +205,7 @@ fn render_loc_card(
     state: &AppState,
 ) {
     let block = Block::default()
-        .title("LOC")
+        .title(accent_title(theme, "LOC"))
         .borders(Borders::ALL)
         .style(theme.base());
     let inner = block.inner(area);
@@ -197,13 +214,13 @@ fn render_loc_card(
     let lines = match state.loc_delta {
         Some(delta) => vec![
             Line::from(vec![
-                Span::styled("+", theme.base().fg(theme.accent).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "+",
+                    theme.base().fg(theme.accent).add_modifier(Modifier::BOLD),
+                ),
                 Span::styled(
                     delta.added.to_string(),
-                    theme
-                        .base()
-                        .fg(theme.accent)
-                        .add_modifier(Modifier::BOLD),
+                    theme.base().fg(theme.accent).add_modifier(Modifier::BOLD),
                 ),
             ]),
             Line::from(vec![
@@ -247,7 +264,7 @@ fn render_status_table(
     state: &AppState,
 ) {
     let block = Block::default()
-        .title("STATUS")
+        .title(accent_title(theme, "STATUS"))
         .borders(Borders::ALL)
         .style(theme.base());
     let inner = block.inner(area);
@@ -275,7 +292,10 @@ fn render_status_table(
 
     let rows = vec![
         Row::new(vec![Cell::from("Focused"), Cell::from(focused)]),
-        Row::new(vec![Cell::from("Fullscreen"), Cell::from(fullscreen.unwrap_or("No"))]),
+        Row::new(vec![
+            Cell::from("Fullscreen"),
+            Cell::from(fullscreen.unwrap_or("No")),
+        ]),
         Row::new(vec![
             Cell::from("Focus active"),
             Cell::from(if state.focus.is_active() { "Yes" } else { "No" }),
@@ -326,4 +346,11 @@ fn format_hms(total_seconds: u64) -> String {
     let minutes = (total_seconds % 3600) / 60;
     let seconds = total_seconds % 60;
     format!("{hours:02}:{minutes:02}:{seconds:02}")
+}
+
+fn accent_title(theme: &Theme, title: &'static str) -> Line<'static> {
+    Line::from(Span::styled(
+        title,
+        theme.base().fg(theme.accent).add_modifier(Modifier::BOLD),
+    ))
 }
